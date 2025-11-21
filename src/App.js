@@ -3,7 +3,7 @@ import './App.css';
 
 function App() {
   const [environment, setEnvironment] = useState('Unknown');
-  const [version, setVersion] = useState('1.1.0');
+  const [version] = useState('1.1.0');
   const [timestamp, setTimestamp] = useState('');
 
   useEffect(() => {
