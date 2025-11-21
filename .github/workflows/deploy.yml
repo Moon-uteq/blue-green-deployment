@@ -101,24 +101,30 @@ jobs:
         ssh-keyscan -H ${{ secrets.DO_SERVER_IP }} >> ~/.ssh/known_hosts
 
     - name: Deploy to DigitalOcean
+      env:
+        VERSION: ${{ env.VERSION }}
+        TARGET_ENV: ${{ env.TARGET_ENV }}
       run: |
         echo "🚀 Starting deployment to DigitalOcean..."
+        echo "Version: $VERSION"
+        echo "Environment: $TARGET_ENV"
         
         # Create deployment directory on server
         ssh root@${{ secrets.DO_SERVER_IP }} "mkdir -p /opt/blue-green-app"
         
         # Copy project files to server
-        scp -r ./* root@${{ secrets.DO_SERVER_IP }}:/opt/blue-green-app/
+        scp -r ./* root@${{ secrets.DO_SERVER_IP }}:/opt/blue-green-app/blue-green-deployment/
         
         # Execute deployment on server
-        ssh root@${{ secrets.DO_SERVER_IP }} << 'EOF'
-          cd /opt/blue-green-app
+        ssh root@${{ secrets.DO_SERVER_IP }} << EOF
+          cd /opt/blue-green-app/blue-green-deployment
           
           # Make scripts executable
           chmod +x scripts/*.sh
           
-          # Stop existing containers (if any)
-          docker-compose down || true
+          # Stop existing containers properly
+          docker-compose down --remove-orphans || true
+          docker network prune -f || true
           
           # Build and deploy to target environment
           echo "Deploying version $VERSION to $TARGET_ENV environment"
