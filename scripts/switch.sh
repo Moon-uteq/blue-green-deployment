@@ -87,6 +87,11 @@ log "Updating local nginx configuration..."
 cp $TEMP_CONFIG nginx/nginx.conf
 
 # Recreate nginx container with new configuration
+# Update local nginx configuration file
+log "Updating local nginx configuration..."
+cp $TEMP_CONFIG nginx/nginx.conf
+
+# Recreate only nginx container
 log "Recreating nginx load balancer with new configuration..."
 docker-compose stop nginx-lb
 docker-compose rm -f nginx-lb  
@@ -115,15 +120,63 @@ fi
 log "Updating persistent nginx configuration..."
 cp nginx/nginx.conf nginx/nginx.conf.bak
 
+# Create completely new nginx config pointing to target environment
+cat > $TEMP_CONFIG << EOF
+events {
+    worker_connections 1024;
+}
+
+http {
+    upstream blue_green_backend {
+EOF
+
 if [ "$TARGET_ENV" = "blue" ]; then
-    sed -i 's/server app-blue:80 weight=0 backup;/server app-blue:80 weight=100;/' nginx/nginx.conf
-    sed -i 's/server app-green:80 weight=100;/server app-green:80 weight=0 backup;/' nginx/nginx.conf
-    sed -i 's/add_header X-Active-Environment "green";/add_header X-Active-Environment "blue";/' nginx/nginx.conf
+cat >> $TEMP_CONFIG << EOF
+        server app-blue:80;
+        server app-green:80 backup;
+EOF
 else
-    sed -i 's/server app-blue:80 weight=100;/server app-blue:80 weight=0 backup;/' nginx/nginx.conf
-    sed -i 's/server app-green:80 weight=0 backup;/server app-green:80 weight=100;/' nginx/nginx.conf
-    sed -i 's/add_header X-Active-Environment "blue";/add_header X-Active-Environment "green";/' nginx/nginx.conf
+cat >> $TEMP_CONFIG << EOF
+        server app-blue:80 backup;
+        server app-green:80;
+EOF
 fi
+
+cat >> $TEMP_CONFIG << EOF
+    }
+
+    server {
+        listen 80;
+        server_name localhost;
+
+        location /lb-health {
+            access_log off;
+            return 200 "Load balancer is healthy\\n";
+            add_header Content-Type text/plain;
+        }
+
+        location / {
+            proxy_pass http://blue_green_backend;
+            proxy_set_header Host \$host;
+            proxy_set_header X-Real-IP \$remote_addr;
+            proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+            proxy_set_header X-Forwarded-Proto \$scheme;
+            
+            proxy_next_upstream error timeout invalid_header http_500 http_502 http_503 http_504;
+            proxy_connect_timeout 1s;
+            proxy_send_timeout 30s;
+            proxy_read_timeout 30s;
+        }
+
+        location /status {
+            access_log off;
+            return 200 "Active environment info\\n";
+            add_header Content-Type text/plain;
+            add_header X-Active-Environment "$TARGET_ENV";
+        }
+    }
+}
+EOF
 
 log "Current deployment status:"
 echo "Active Environment: $TARGET_ENV"
