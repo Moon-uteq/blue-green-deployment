@@ -3,13 +3,17 @@ version: '3.8'
 services:
   # Blue environment
   app-blue:
-    build: .
+    build:
+      context: .
+      args:
+        - REACT_APP_ENVIRONMENT=blue
     container_name: ${PROJECT_NAME:-blue-green-app}-app-blue
     ports:
       - "3001:80"
     environment:
       - NODE_ENV=production
       - ENVIRONMENT=blue
+      - REACT_APP_ENVIRONMENT=blue
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost/health"]
       interval: 30s
@@ -22,13 +26,17 @@ services:
 
   # Green environment
   app-green:
-    build: .
+    build:
+      context: .
+      args:
+        - REACT_APP_ENVIRONMENT=green
     container_name: ${PROJECT_NAME:-blue-green-app}-app-green
     ports:
       - "3002:80"
     environment:
-      - NODE_ENV=production
+      - NODE_ENV=production  
       - ENVIRONMENT=green
+      - REACT_APP_ENVIRONMENT=green
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost/health"]
       interval: 30s
