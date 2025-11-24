@@ -133,10 +133,13 @@ jobs:
         EOF
 
     - name: Run health checks
+      env:
+        TARGET_ENV: ${{ env.TARGET_ENV }}
       run: |
         echo "🔍 Running health checks..."
-        ssh root@${{ secrets.DO_SERVER_IP }} << 'EOF'
-          cd /opt/blue-green-app
+        echo "Target environment: $TARGET_ENV"
+        ssh root@${{ secrets.DO_SERVER_IP }} << EOF
+          cd /opt/blue-green-app/blue-green-deployment
           ./scripts/health-check.sh $TARGET_ENV
         EOF
 
