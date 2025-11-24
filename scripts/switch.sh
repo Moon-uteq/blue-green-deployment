@@ -88,7 +88,9 @@ cp $TEMP_CONFIG nginx/nginx.conf
 
 # Recreate nginx container with new configuration
 log "Recreating nginx load balancer with new configuration..."
-docker-compose up -d --force-recreate nginx-lb
+docker-compose stop nginx-lb
+docker-compose rm -f nginx-lb  
+docker-compose up -d nginx-lb
 
 # Wait for container to be ready
 sleep 10
