@@ -50,7 +50,7 @@ fi
 log "Checking health of $ENVIRONMENT environment on port $PORT"
 
 # Check if container is running
-CONTAINER_NAME="blue-green-app-app-$ENVIRONMENT-1"
+CONTAINER_NAME="blue-green-app-app-$ENVIRONMENT"
 if ! docker ps --format "table {{.Names}}" | grep -q "$CONTAINER_NAME"; then
     error "Container $CONTAINER_NAME is not running"
     exit 1

@@ -71,7 +71,7 @@ docker-compose up -d app-$ENVIRONMENT
 
 # Wait for container to be ready
 log "Waiting for $ENVIRONMENT environment to be ready..."
-sleep 10
+sleep 30
 
 # Health check
 log "Performing health check on $ENVIRONMENT environment..."
