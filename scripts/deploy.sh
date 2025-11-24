@@ -55,7 +55,7 @@ log "Starting deployment of version $VERSION to $ENVIRONMENT environment"
 
 # Build new image with version tag
 log "Building Docker image for $ENVIRONMENT environment..."
-docker build -t $PROJECT_NAME:$VERSION .
+docker build --no-cache -t $PROJECT_NAME:$VERSION .
 
 # Tag image for the specific environment
 docker tag $PROJECT_NAME:$VERSION $PROJECT_NAME:$ENVIRONMENT
@@ -67,7 +67,7 @@ docker-compose rm -f app-$ENVIRONMENT || true
 
 # Start new container for this environment
 log "Starting new $ENVIRONMENT container with version $VERSION..."
-docker-compose up -d app-$ENVIRONMENT
+docker-compose up -d --build --force-recreate app-$ENVIRONMENT
 
 # Wait for container to be ready
 log "Waiting for $ENVIRONMENT environment to be ready..."
