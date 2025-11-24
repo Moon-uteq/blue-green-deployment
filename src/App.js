@@ -32,7 +32,7 @@ function App() {
     <div className="App">
       <header className="App-header" style={{ backgroundColor: getEnvironmentColor() }}>
         <div className="environment-banner">
-          <h1>🚀 Blue-Green Deployment Demo - VERSION 2.0 TEST</h1>
+          <h1>🚀 Blue-Green Deployment Demo - VERSION 2.1 TEST</h1>
           <div className="environment-info">
             <div className="env-badge" style={{ 
               backgroundColor: 'rgba(255,255,255,0.2)',

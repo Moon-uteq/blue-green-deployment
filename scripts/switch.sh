@@ -82,13 +82,16 @@ else
     sed -i 's/add_header X-Active-Environment "blue";/add_header X-Active-Environment "green";/' $TEMP_CONFIG
 fi
 
-# Copy new configuration to nginx container
-log "Applying new nginx configuration..."
-docker cp $TEMP_CONFIG $(docker-compose ps -q nginx-lb):/etc/nginx/nginx.conf
+# Update local nginx configuration file
+log "Updating local nginx configuration..."
+cp $TEMP_CONFIG nginx/nginx.conf
 
-# Reload nginx configuration
-log "Reloading nginx configuration..."
-docker-compose exec nginx-lb nginx -s reload
+# Recreate nginx container with new configuration
+log "Recreating nginx load balancer with new configuration..."
+docker-compose up -d --force-recreate nginx-lb
+
+# Wait for container to be ready
+sleep 10
 
 # Clean up temporary file
 rm $TEMP_CONFIG
