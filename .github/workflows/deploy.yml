@@ -79,8 +79,8 @@ jobs:
           echo "TARGET_ENV=${{ github.event.inputs.environment }}" >> $GITHUB_ENV
           echo "AUTO_SWITCH=${{ github.event.inputs.auto_switch }}" >> $GITHUB_ENV
         else
-          # Auto-determine environment (alternating strategy)
-          echo "TARGET_ENV=green" >> $GITHUB_ENV
+          # Auto-determine environment based on current active environment
+          echo "TARGET_ENV=auto" >> $GITHUB_ENV
           echo "AUTO_SWITCH=false" >> $GITHUB_ENV
         fi
         
@@ -99,6 +99,22 @@ jobs:
     - name: Add server to known hosts
       run: |
         ssh-keyscan -H ${{ secrets.DO_SERVER_IP }} >> ~/.ssh/known_hosts
+
+    - name: Determine inactive environment
+      if: env.TARGET_ENV == 'auto'
+      run: |
+        # Check which environment is currently active
+        ACTIVE_ENV=$(ssh root@${{ secrets.DO_SERVER_IP }} "curl -s -I http://localhost:8080/status | grep X-Active-Environment | cut -d' ' -f2 | tr -d '\r'")
+        
+        echo "Current active environment: $ACTIVE_ENV"
+        
+        if [ "$ACTIVE_ENV" = "blue" ]; then
+          echo "TARGET_ENV=green" >> $GITHUB_ENV
+          echo "✅ Active environment is blue, deploying to green"
+        else
+          echo "TARGET_ENV=blue" >> $GITHUB_ENV
+          echo "✅ Active environment is green, deploying to blue"  
+        fi
 
     - name: Deploy to DigitalOcean
       env:
@@ -147,8 +163,8 @@ jobs:
       if: env.AUTO_SWITCH == 'true'
       run: |
         echo "🔄 Auto-switching traffic to $TARGET_ENV environment"
-        ssh root@${{ secrets.DO_SERVER_IP }} << 'EOF'
-          cd /opt/blue-green-app
+        ssh root@${{ secrets.DO_SERVER_IP }} << EOF
+          cd /opt/blue-green-app/blue-green-deployment
           ./scripts/switch.sh $TARGET_ENV
         EOF
 
@@ -192,7 +208,7 @@ jobs:
       run: |
         echo "🔄 Performing rollback..."
         ssh root@${{ secrets.DO_SERVER_IP }} << 'EOF'
-          cd /opt/blue-green-app
+          cd /opt/blue-green-app/blue-green-deployment
           
           # Determine current active environment and switch to the other
           CURRENT_ENV=$(curl -s -I localhost:8080/status | grep X-Active-Environment | cut -d' ' -f2 | tr -d '\r')
@@ -211,7 +227,7 @@ jobs:
     - name: Verify rollback
       run: |
         ssh root@${{ secrets.DO_SERVER_IP }} << 'EOF'
-          cd /opt/blue-green-app
+          cd /opt/blue-green-app/blue-green-deployment
           # Wait a moment for switch to take effect
           sleep 5
           # Verify the new environment is responding
