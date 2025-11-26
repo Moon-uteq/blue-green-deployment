@@ -3,7 +3,7 @@ import './App.css';
 
 function App() {
   const [environment, setEnvironment] = useState('Unknown');
-  const [version] = useState('6.0.0');
+  const [version] = useState('7.0.0');
   const [timestamp, setTimestamp] = useState('');
 
   useEffect(() => {
@@ -32,7 +32,7 @@ function App() {
     <div className="App">
       <header className="App-header" style={{ backgroundColor: getEnvironmentColor() }}>
         <div className="environment-banner">
-<h1>Blue-Green Deployment Demo version algooooo</h1>
+<h1>SIGUE BLUE Deployment Demo version algooooo</h1>
           <div className="environment-info">
             <div className="env-badge" style={{ 
               backgroundColor: 'rgba(255,255,255,0.2)',
@@ -48,16 +48,6 @@ function App() {
         </div>
         
         <div className="content-section">
-          <h3>✅ Features Demonstrated:</h3>
-          <ul style={{ textAlign: 'left', maxWidth: '600px' }}>
-            <li>🐳 Docker containerization</li>
-            <li>🔄 Blue-Green deployment strategy</li>
-            <li>📋 Nginx load balancing</li>
-            <li>🛠️ Shell scripts automation</li>
-            <li>🚀 GitHub Actions CI/CD pipeline</li>
-            <li>❤️ Health checks and monitoring</li>
-          </ul>
-
           <div className="demo-buttons">
             <button 
               className="demo-btn"
