@@ -3,7 +3,7 @@ import './App.css';
 
 function App() {
   const [environment, setEnvironment] = useState('Unknown');
-  const [version] = useState('5.1.0');
+  const [version] = useState('6.0.0');
   const [timestamp, setTimestamp] = useState('');
 
   useEffect(() => {
@@ -32,7 +32,7 @@ function App() {
     <div className="App">
       <header className="App-header" style={{ backgroundColor: getEnvironmentColor() }}>
         <div className="environment-banner">
-<h1>Blue-Green Deployment Demo version chida 22</h1>
+<h1>Blue-Green Deployment Demo version algooooo</h1>
           <div className="environment-info">
             <div className="env-badge" style={{ 
               backgroundColor: 'rgba(255,255,255,0.2)',
