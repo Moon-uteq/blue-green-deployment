@@ -3,7 +3,7 @@ import './App.css';
 
 function App() {
   const [environment, setEnvironment] = useState('Unknown');
-  const [version] = useState('7.0.0');
+  const [version] = useState('8.0.0');
   const [timestamp, setTimestamp] = useState('');
 
   useEffect(() => {
@@ -32,7 +32,7 @@ function App() {
     <div className="App">
       <header className="App-header" style={{ backgroundColor: getEnvironmentColor() }}>
         <div className="environment-banner">
-<h1>SIGUE BLUE Deployment Demo version algooooo</h1>
+<h1>SIGUE GREEN Deployment</h1>
           <div className="environment-info">
             <div className="env-badge" style={{ 
               backgroundColor: 'rgba(255,255,255,0.2)',
@@ -47,33 +47,6 @@ function App() {
           </div>
         </div>
         
-        <div className="content-section">
-          <div className="demo-buttons">
-            <button 
-              className="demo-btn"
-              onClick={() => alert(`Currently running on ${environment} environment!`)}
-            >
-              Check Current Environment
-            </button>
-            
-            <button 
-              className="demo-btn secondary"
-              onClick={() => window.open('/health', '_blank')}
-            >
-              Health Check
-            </button>
-          </div>
-        </div>
-
-        <div className="deployment-info">
-          <h4>🔧 Deployment Commands:</h4>
-          <div className="command-box">
-            <code>./scripts/deploy.sh v1.0.0 green</code>
-            <br />
-            <code>./scripts/switch.sh green</code>
-          </div>
-        </div>
-
         <footer style={{ marginTop: '40px', opacity: '0.8' }}>
           <p>Blue-Green Deployment Implementation</p>
           <p>Built with React + Docker + Nginx + GitHub Actions</p>
