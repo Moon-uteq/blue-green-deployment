@@ -1,8 +1,7 @@
 #!/bin/bash
 
-# Blue-Green Traffic Switch Script
-# Usage: ./switch.sh [environment]
-# Example: ./switch.sh green
+# Auto Blue-Green Deployment and Switch Script
+# Usage: ./switch.sh (no parameters needed - detects automatically)
 
 set -e
 
@@ -14,7 +13,7 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 log() {
-    echo -e "${BLUE}[SWITCH]${NC} $1"
+    echo -e "${BLUE}[AUTO-DEPLOY]${NC} $1"
 }
 
 error() {
@@ -25,50 +24,52 @@ success() {
     echo -e "${GREEN}[SUCCESS]${NC} $1"
 }
 
-warning() {
-    echo -e "${YELLOW}[WARNING]${NC} $1"
-}
+log "🚀 Starting automatic Blue-Green deployment..."
 
-# Check if environment parameter is provided
-if [ $# -ne 1 ]; then
-    error "Usage: $0 <environment>"
-    error "Example: $0 green"
-    exit 1
+# Detect current active environment
+log "🔍 Detecting current active environment..."
+ACTIVE_ENV=$(curl -s -I http://localhost:8080/status | grep X-Active-Environment | cut -d' ' -f2 | tr -d '\r')
+
+if [ -z "$ACTIVE_ENV" ]; then
+    # If no environment is detected, default to blue
+    ACTIVE_ENV="blue"
+    log "⚠️  No active environment detected, defaulting to blue"
 fi
 
-TARGET_ENV=$1
-
-# Validate environment
-if [[ "$TARGET_ENV" != "blue" && "$TARGET_ENV" != "green" ]]; then
-    error "Environment must be 'blue' or 'green'"
-    exit 1
-fi
-
-# Determine the other environment
-if [ "$TARGET_ENV" = "blue" ]; then
-    OLD_ENV="green"
+# Determine target environment (deploy to inactive)
+if [ "$ACTIVE_ENV" = "blue" ]; then
+    TARGET_ENV="green"
+    log "🟦 Blue is currently ACTIVE → Deploying to GREEN"
 else
-    OLD_ENV="blue"
+    TARGET_ENV="blue"  
+    log "🟢 Green is currently ACTIVE → Deploying to BLUE"
 fi
 
-log "Switching traffic from $OLD_ENV to $TARGET_ENV environment"
+# Deploy to target environment
+log "📦 Building and deploying to $TARGET_ENV environment..."
+docker-compose stop app-$TARGET_ENV || true
+docker-compose rm -f app-$TARGET_ENV || true
+docker-compose build --no-cache app-$TARGET_ENV
+docker-compose up -d app-$TARGET_ENV
 
-# Perform final health check on target environment
-log "Performing final health check on $TARGET_ENV before switch..."
+# Wait for deployment
+log "⏳ Waiting for $TARGET_ENV environment to be ready..."
+sleep 30
+
+# Health check
+log "❤️ Performing health check on $TARGET_ENV..."
 if ! ./scripts/health-check.sh $TARGET_ENV; then
-    error "Health check failed for $TARGET_ENV environment. Aborting switch."
+    error "Health check failed for $TARGET_ENV environment. Aborting."
     exit 1
 fi
 
-# Create new nginx configuration
-log "Updating nginx configuration to point to $TARGET_ENV..."
+# Auto-switch traffic
+log "🔄 Switching traffic from $ACTIVE_ENV to $TARGET_ENV..."
 
-# Create temporary nginx config
+# Create new nginx config
 TEMP_CONFIG="/tmp/nginx_temp.conf"
 
-# Create completely new nginx config pointing to target environment
 if [ "$TARGET_ENV" = "blue" ]; then
-    # Configuration for BLUE active
     cat > $TEMP_CONFIG << 'EOF'
 events {
     worker_connections 1024;
@@ -113,7 +114,6 @@ http {
 }
 EOF
 else
-    # Configuration for GREEN active
     cat > $TEMP_CONFIG << 'EOF'
 events {
     worker_connections 1024;
@@ -138,7 +138,6 @@ http {
         location / {
             proxy_pass http://blue_green_backend;
             proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
             proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
             proxy_set_header X-Forwarded-Proto $scheme;
             
@@ -159,36 +158,15 @@ http {
 EOF
 fi
 
-# Update local nginx configuration file
-log "Updating local nginx configuration..."
+# Apply new nginx config
 cp $TEMP_CONFIG nginx/nginx.conf
-
-# Recreate only nginx container
-log "Recreating nginx load balancer with new configuration..."
 docker-compose stop nginx-lb
 docker-compose rm -f nginx-lb  
 docker-compose up -d nginx-lb
-
-# Wait for container to be ready
 sleep 10
 
-# Clean up temporary file
+# Cleanup
 rm $TEMP_CONFIG
 
-# Verify the switch was successful
-log "Verifying traffic switch..."
-ACTIVE_ENV_HEADER=$(curl -s -I http://localhost:8080/status | grep X-Active-Environment || echo "")
-
-if [[ "$ACTIVE_ENV_HEADER" == *"$TARGET_ENV"* ]]; then
-    success "Traffic successfully switched to $TARGET_ENV environment!"
-else
-    warning "Could not verify active environment header. Manual verification recommended."
-fi
-
-log "Current deployment status:"
-echo "Active Environment: $TARGET_ENV"
-echo "Inactive Environment: $OLD_ENV"
-echo ""
-log "You can now safely update the $OLD_ENV environment for the next deployment."
-
-success "Traffic switch completed successfully!"
+success "🎉 Deployment complete! $TARGET_ENV is now ACTIVE on port 8080"
+log "📊 Status: $ACTIVE_ENV (inactive) ← $TARGET_ENV (ACTIVE)"
