@@ -3,157 +3,150 @@ import './App.css';
 
 function App() {
   const [environment, setEnvironment] = useState('Unknown');
-  const [version] = useState('8.1.0');
+  const [version] = useState('8.0.0');
   const [timestamp, setTimestamp] = useState('');
-  const [uptime, setUptime] = useState(0);
+  const [isAnimating, setIsAnimating] = useState(false);
 
   useEffect(() => {
-    // Obtener el ambiente desde las variables de entorno
-    // Durante el BUILD de Docker, las variables se inyectan en el código
-    const env = process.env.REACT_APP_ENVIRONMENT || 'Unknown';
+    // Get environment from environment variable or default
+    const env = process.env.REACT_APP_ENVIRONMENT || process.env.ENVIRONMENT || 'development';
     setEnvironment(env);
     
-    // Establecer la marca de tiempo de cuando se construyó
+    // Set build timestamp
     setTimestamp(new Date().toLocaleString());
 
-    // Simular un contador de tiempo activo (uptime)
-    // Esto cuenta cuántos segundos lleva la app abierta
-    const interval = setInterval(() => {
-      setUptime(prev => prev + 1);
-    }, 1000);
-
-    return () => clearInterval(interval); // Limpiar cuando el componente se desmonte
+    // Trigger animation on mount
+    setTimeout(() => setIsAnimating(true), 100);
   }, []);
 
-  // Función que retorna el color según el ambiente
-  const getEnvironmentColor = () => {
+  const getEnvironmentConfig = () => {
     switch (environment.toLowerCase()) {
       case 'blue':
-        return '#0066cc';
+        return {
+          color: '#1e3a8a',
+          gradient: 'linear-gradient(135deg, #1e40af 0%, #3b82f6 50%, #60a5fa 100%)',
+          icon: '🌊',
+          subtitle: 'Blue Ocean Deployment'
+        };
       case 'green':
-        return '#00cc66';
+        return {
+          color: '#166534',
+          gradient: 'linear-gradient(135deg, #15803d 0%, #22c55e 50%, #4ade80 100%)',
+          icon: '🌿',
+          subtitle: 'Green Forest Deployment'
+        };
       case 'production':
-        return '#9c27b0';
+        return {
+          color: '#7c2d12',
+          gradient: 'linear-gradient(135deg, #dc2626 0%, #f59e0b 50%, #fbbf24 100%)',
+          icon: '🚀',
+          subtitle: 'Production Ready'
+        };
       default:
-        return '#607d8b';
+        return {
+          color: '#374151',
+          gradient: 'linear-gradient(135deg, #4b5563 0%, #6b7280 50%, #9ca3af 100%)',
+          icon: '⚙️',
+          subtitle: 'Development Environment'
+        };
     }
   };
 
-  // Función que convierte segundos en formato legible (minutos y segundos)
-  const formatUptime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return ${mins}m ${secs}s;
+  const config = getEnvironmentConfig();
+
+  const handleRefresh = () => {
+    window.location.reload();
   };
 
   return (
-    <div className="App">
-      {/* Barra superior con el logo y título */}
-      <nav className="navbar" style={{ backgroundColor: getEnvironmentColor() }}>
-        <div className="navbar-content">
-          <div className="logo-section">
-            <div className="logo-circle"></div>
-            <span className="logo-text">Blue-Green Deploy</span>
-          </div>
-          <div className="environment-badge" style={{ borderColor: getEnvironmentColor() }}>
-            {environment.toUpperCase()}
-          </div>
+    <div className="app-container">
+      {/* Animated background */}
+      <div className="animated-bg" style={{ background: config.gradient }}>
+        <div className="floating-shapes">
+          <div className="shape shape-1"></div>
+          <div className="shape shape-2"></div>
+          <div className="shape shape-3"></div>
+          <div className="shape shape-4"></div>
         </div>
-      </nav>
+      </div>
 
-      {/* Contenedor principal con todas las secciones */}
-      <div className="container">
-        {/* Sección de bienvenida */}
-        <section className="welcome-section">
-          <h1 className="main-title">Sistema de Despliegue</h1>
-          <p className="subtitle">Monitoreo en tiempo real de tu aplicación</p>
-        </section>
-
-        {/* Grid de tarjetas con información */}
-        <div className="cards-grid">
-          {/* Tarjeta 1: Estado del Sistema */}
-          <div className="card status-card">
-            <div className="card-icon" style={{ backgroundColor: getEnvironmentColor() }}>
-              <span className="icon">✓</span>
+      {/* Main content */}
+      <div className={`main-content ${isAnimating ? 'animate-in' : ''}`}>
+        {/* Header Card */}
+        <div className="environment-card">
+          <div className="card-header">
+            <div className="env-icon">{config.icon}</div>
+            <div className="env-title">
+              <h1>{environment.toUpperCase()}</h1>
+              <p className="env-subtitle">{config.subtitle}</p>
             </div>
-            <h3 className="card-title">Estado del Sistema</h3>
+          </div>
+          
+          <div className="deployment-status">
             <div className="status-indicator">
-              <span className="status-dot active"></span>
-              <span className="status-text">Operativo</span>
-            </div>
-            <p className="card-description">
-              Todos los servicios funcionando correctamente
-            </p>
-          </div>
-
-          {/* Tarjeta 2: Información de Versión */}
-          <div className="card version-card">
-            <div className="card-icon" style={{ backgroundColor: getEnvironmentColor() }}>
-              <span className="icon">v</span>
-            </div>
-            <h3 className="card-title">Versión Actual</h3>
-            <div className="version-number">{version}</div>
-            <p className="card-description">
-              Última actualización desplegada
-            </p>
-          </div>
-
-          {/* Tarjeta 3: Tiempo Activo */}
-          <div className="card uptime-card">
-            <div className="card-icon" style={{ backgroundColor: getEnvironmentColor() }}>
-              <span className="icon">⏱</span>
-            </div>
-            <h3 className="card-title">Tiempo Activo</h3>
-            <div className="uptime-display">{formatUptime(uptime)}</div>
-            <p className="card-description">
-              Tiempo desde el último despliegue
-            </p>
-          </div>
-
-          {/* Tarjeta 4: Información de Despliegue */}
-          <div className="card deploy-card">
-            <div className="card-icon" style={{ backgroundColor: getEnvironmentColor() }}>
-              <span className="icon">🚀</span>
-            </div>
-            <h3 className="card-title">Último Despliegue</h3>
-            <div className="deploy-time">{timestamp}</div>
-            <p className="card-description">
-              Fecha y hora del deploy
-            </p>
-          </div>
-        </div>
-
-        {/* Sección de información técnica */}
-        <div className="tech-info">
-          <h2 className="tech-title">Stack Tecnológico</h2>
-          <div className="tech-stack">
-            <div className="tech-item">
-              <div className="tech-icon">⚛️</div>
-              <span>React</span>
-            </div>
-            <div className="tech-item">
-              <div className="tech-icon">🐳</div>
-              <span>Docker</span>
-            </div>
-            <div className="tech-item">
-              <div className="tech-icon">🔧</div>
-              <span>Nginx</span>
-            </div>
-            <div className="tech-item">
-              <div className="tech-icon">⚙️</div>
-              <span>GitHub Actions</span>
-            </div>
-            <div className="tech-item">
-              <div className="tech-icon">🌊</div>
-              <span>Digital Ocean</span>
+              <div className="pulse-dot" style={{ backgroundColor: config.color }}></div>
+              <span>ACTIVE DEPLOYMENT</span>
             </div>
           </div>
         </div>
 
-        {/* Pie de página */}
-        <footer className="footer">
-          <p>Estrategia Blue-Green Deployment</p>
-          <p>Despliegues sin tiempo de inactividad • Rollback instantáneo</p>
+        {/* Info Grid */}
+        <div className="info-grid">
+          <div className="info-card">
+            <div className="info-icon">📦</div>
+            <div className="info-content">
+              <h3>Version</h3>
+              <p className="info-value">{version}</p>
+            </div>
+          </div>
+
+          <div className="info-card">
+            <div className="info-icon">⏰</div>
+            <div className="info-content">
+              <h3>Deployed At</h3>
+              <p className="info-value">{timestamp}</p>
+            </div>
+          </div>
+
+          <div className="info-card">
+            <div className="info-icon">🏗️</div>
+            <div className="info-content">
+              <h3>Build System</h3>
+              <p className="info-value">GitHub Actions</p>
+            </div>
+          </div>
+
+          <div className="info-card">
+            <div className="info-icon">🐳</div>
+            <div className="info-content">
+              <h3>Container</h3>
+              <p className="info-value">Docker + Nginx</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Action Button */}
+        <div className="action-section">
+          <button className="refresh-btn" onClick={handleRefresh}>
+            <span className="btn-icon">🔄</span>
+            Refresh Status
+          </button>
+        </div>
+
+        {/* Footer */}
+        <footer className="app-footer">
+          <div className="footer-content">
+            <div className="tech-stack">
+              <span className="tech-item">React</span>
+              <span className="tech-separator">•</span>
+              <span className="tech-item">Docker</span>
+              <span className="tech-separator">•</span>
+              <span className="tech-item">Nginx</span>
+              <span className="tech-separator">•</span>
+              <span className="tech-item">CI/CD</span>
+            </div>
+            <p className="footer-text">Blue-Green Deployment System by Moon</p>
+          </div>
         </footer>
       </div>
     </div>
